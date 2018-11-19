@@ -1,8 +1,22 @@
 grammar MonkeyHaskell;
+
 // ==================== PARSER RULES ====================
+program: (decl (EOF | newline))*;
+newline: NEWLINE;
+
 decl
     : func '::' type                                #TypeSignature
-    | func identifier* '=' expr                     #FuncDeclaration;
+    | func identifier* declval                      #FuncDeclaration;
+declval
+    : '=' expr
+    | gdecl;
+gdecl
+    : (guards '=' expr) (NEWLINE gdecl)?;
+guards
+    : '|' guard;
+guard
+    : infexpr                                       #GuardExpr
+    | 'otherwise'                                   #DefaultGuard;
 identifier
     : FUNCID;
 func
@@ -64,7 +78,7 @@ fexpr
 // ==================================== LEXER RULES ====================================
         // reserved id are declared before FUNCID and CONSID
         // to ensure they won't be detected as such.
-         RESERVEDID  : 'if' | 'then' | 'else';
+         RESERVEDID  : 'if' | 'then' | 'else' | 'otherwise';
          
          FUNCID      : LOWERC (LOWERC | UPPERC | DIGIT | '\'')*;
          CONSID      : UPPERC (LOWERC | UPPERC | DIGIT | '\'')*;
@@ -86,6 +100,7 @@ fexpr
          SPACE       : ' ';
          TAB         : '\t';
          DASHES      : '--''-'*;
+         NEWLINE     : ('\r' | '\n')+;
 
          LOWERC      : [a-z];
          UPPERC      : [A-Z];
